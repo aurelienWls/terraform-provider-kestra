@@ -9,7 +9,6 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"gopkg.in/yaml.v2"
 )
 
 func resourceFlow() *schema.Resource {
@@ -20,7 +19,6 @@ func resourceFlow() *schema.Resource {
 		ReadContext:   resourceFlowRead,
 		UpdateContext: resourceFlowUpdate,
 		DeleteContext: resourceFlowDelete,
-
 		Schema: map[string]*schema.Schema{
 			"namespace": {
 				Description: "The flow namespace.",
@@ -72,26 +70,20 @@ func resourceFlowCreate(ctx context.Context, d *schema.ResourceData, meta interf
 	delete(flowApi, "namespace")
 	delete(flowApi, "revision")
 
-	flow, err := yaml.Marshal(&flowApi)
+	flow, err := json.MarshalIndent(&flowApi, "", "   ")
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	fmt.Printf("--- t dump:\n%s\n\n", string(flow))
-
-	if err := d.Set("flowApi", flowApi); err != nil {
+	if err := d.Set("content", string(flow)); err != nil {
 		return diag.FromErr(err)
 	}
 
 	// always run
-	d.SetId(string(flowApi["namespace"]) + "." + string(flowApi["id"]))
+	id := fmt.Sprintf("%s#%s", namespace, flowId)
+	d.SetId(id)
 
 	return diags
-
-	idFromAPI := "my-id"
-	d.SetId(idFromAPI)
-
-	return diag.Errorf("not implemented")
 }
 
 func resourceFlowRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {

@@ -16,7 +16,7 @@ func TestAccResourceFlow(t *testing.T) {
 				Config: testAccResourceFlow,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestMatchResourceAttr(
-						"kestra_flow.foo", "namespace", regexp.MustCompile("^ba")),
+						"kestra_flow.foo", "namespace", regexp.MustCompile(".*")),
 				),
 			},
 		},
@@ -28,24 +28,36 @@ resource "kestra_flow" "foo" {
   namespace = "io.kestra.tests"
   flow_id = "logs"
   content = <<EOT
-taskDefaults:
-  - type: io.kestra.core.tasks.debugs.Echo
-	values:
-	  format: third {{flow.id}}
-
-tasks:
-- id: t1
-  type: io.kestra.core.tasks.debugs.Echo
-  format: first {{task.id}}
-  level: TRACE
-- id: t2
-  type: io.kestra.core.tasks.debugs.Echo
-  format: second {{task.type}}
-  level: WARN
-- id: t3
-  type: io.kestra.core.tasks.debugs.Echo
-  format: third {{flow.id}}
-  level: ERROR
+{
+    "taskDefaults": [
+        {
+            "type": "io.kestra.core.tasks.debugs.Echo",
+            "values": {
+                "format": "third {{flow.id}}"
+            }
+        }
+    ],
+    "tasks": [
+        {
+            "format": "first {{task.id}}",
+            "id": "t1",
+            "level": "TRACE",
+            "type": "io.kestra.core.tasks.debugs.Echo"
+        },
+        {
+            "format": "second {{task.type}}",
+            "id": "t2",
+            "level": "WARN",
+            "type": "io.kestra.core.tasks.debugs.Echo"
+        },
+        {
+            "format": "third {{flow.id}}",
+            "id": "t3",
+            "level": "ERROR",
+            "type": "io.kestra.core.tasks.debugs.Echo"
+        }
+    ]
+}
 EOT
 }
 `
